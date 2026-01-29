@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"sync"
 )
 
@@ -14,13 +15,23 @@ const (
 )
 
 func main() {
+	if err := os.Mkdir("output", 0755); err != nil && os.IsNotExist(err) {
+		fmt.Println(err)
+		return
+	}
+
 	var wg sync.WaitGroup
 	for num := range frame {
 		wg.Add(1)
 		ppm(num, &wg)
 	}
-
 	wg.Wait()
+
+	cmd := exec.Command("ffmpeg", "-i", "output/image-%02d.ppm", "-r", "60", "output/output.mp4")
+	if err := cmd.Run(); err != nil {
+		fmt.Println("ffmpeg Error:", err)
+		return
+	}
 }
 
 func ppm(num int, wg *sync.WaitGroup) {
